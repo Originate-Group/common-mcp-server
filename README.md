@@ -14,14 +14,14 @@ A production-ready framework for building HTTP MCP (Model Context Protocol) serv
 ## Installation
 
 ```bash
-pip install common-mcp-server
+pip install common-mcp-submodule
 ```
 
 Or with git submodule:
 
 ```bash
-git submodule add https://github.com/Originate-Group/common-mcp-server.git
-pip install -e common-mcp-server/
+git submodule add https://github.com/Originate-Group/common-mcp-submodule.git
+pip install -e common-mcp-submodule/
 ```
 
 ## Quick Start
@@ -293,8 +293,8 @@ See the [examples/](examples/) directory for complete working examples:
 
 ```bash
 # Clone repository
-git clone https://github.com/Originate-Group/common-mcp-server.git
-cd common-mcp-server
+git clone https://github.com/Originate-Group/common-mcp-submodule.git
+cd common-mcp-submodule
 
 # Install with dev dependencies
 pip install -e ".[dev]"
@@ -324,7 +324,7 @@ ruff src/
            │ Authorization: Bearer oauth_token
            ▼
 ┌─────────────────────────────────────┐
-│  common-mcp-server                  │
+│  common-mcp-submodule                  │
 │  ┌───────────────────────────────┐  │
 │  │  DualAuthenticator            │  │
 │  │  - Validates PAT or OAuth     │  │
@@ -363,6 +363,6 @@ Contributions welcome! Please:
 
 ## Support
 
-- **Issues**: https://github.com/Originate-Group/common-mcp-server/issues
-- **Documentation**: https://github.com/Originate-Group/common-mcp-server
+- **Issues**: https://github.com/Originate-Group/common-mcp-submodule/issues
+- **Documentation**: https://github.com/Originate-Group/common-mcp-submodule
 - **Email**: info@originate.group

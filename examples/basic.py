@@ -1,4 +1,4 @@
-"""Basic example of using common-mcp-server.
+"""Basic example of using common-mcp-submodule.
 
 This example demonstrates a minimal MCP server with PAT authentication only.
 

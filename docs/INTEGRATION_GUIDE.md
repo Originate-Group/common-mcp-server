@@ -1,6 +1,6 @@
 # Integration Guide
 
-This guide shows how to integrate `common-mcp-server` into your existing FastAPI application.
+This guide shows how to integrate `common-mcp-submodule` into your existing FastAPI application.
 
 ## Step-by-Step Integration
 
@@ -10,22 +10,22 @@ This guide shows how to integrate `common-mcp-server` into your existing FastAPI
 
 ```bash
 # Add as submodule
-git submodule add https://github.com/Originate-Group/common-mcp-server.git
+git submodule add https://github.com/Originate-Group/common-mcp-submodule.git
 
 # Install in development mode
-pip install -e common-mcp-server/
+pip install -e common-mcp-submodule/
 ```
 
 **Option B: PyPI (When published)**
 
 ```bash
-pip install common-mcp-server
+pip install common-mcp-submodule
 ```
 
 **Option C: Direct from Git**
 
 ```bash
-pip install git+https://github.com/Originate-Group/common-mcp-server.git
+pip install git+https://github.com/Originate-Group/common-mcp-submodule.git
 ```
 
 ### 2. Configure Authentication
@@ -250,7 +250,7 @@ your-app/
 │   │       └── handlers.py      # MCP tool handlers ⭐ NEW
 │   └── models/
 │       └── database.py
-├── common-mcp-server/           # Git submodule ⭐ NEW
+├── common-mcp-submodule/           # Git submodule ⭐ NEW
 └── requirements.txt
 ```
 
@@ -424,7 +424,7 @@ List my items using the your-app MCP tools
 2. Verify OAuth JWKS URL is accessible
 3. Enable debug logging:
    ```python
-   logging.getLogger("common-mcp-server.auth").setLevel(logging.DEBUG)
+   logging.getLogger("common-mcp-submodule.auth").setLevel(logging.DEBUG)
    ```
 
 ### Tool Execution Errors
