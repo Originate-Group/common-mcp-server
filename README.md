@@ -4,6 +4,7 @@ A production-ready framework for building HTTP MCP (Model Context Protocol) serv
 
 ## Features
 
+- **🐳 Container-First**: Designed for Docker deployment from development to production
 - **HTTP Transport**: MCP over HTTP with JSON-RPC 2.0 protocol
 - **Dual Authentication**: Support for both OAuth 2.1 (Keycloak/OIDC) and Personal Access Tokens
 - **FastAPI Integration**: Clean integration with FastAPI applications
@@ -11,20 +12,18 @@ A production-ready framework for building HTTP MCP (Model Context Protocol) serv
 - **Production Ready**: Battle-tested in production environments
 - **Simple API**: Minimal boilerplate, decorator-based configuration
 
-## Installation
+## Quick Start (Docker - Recommended)
 
 ```bash
-pip install common-mcp-submodule
+cd examples/docker
+docker compose up
 ```
 
-Or with git submodule:
+Access the server at: http://localhost:8000
 
-```bash
-git submodule add https://github.com/Originate-Group/common-mcp-submodule.git
-pip install -e common-mcp-submodule/
-```
+See the complete [Docker example](examples/docker/README.md) with production deployment patterns.
 
-## Quick Start
+## Quick Start (Code Example)
 
 ```python
 from fastapi import FastAPI
@@ -289,7 +288,33 @@ See the [examples/](examples/) directory for complete working examples:
 - [examples/oauth_only.py](examples/oauth_only.py) - OAuth-only server
 - [examples/pat_only.py](examples/pat_only.py) - PAT-only server
 
+## Production Integration
+
+For production deployments, see the [Integration Guide](docs/INTEGRATION_GUIDE.md) which covers:
+
+- **Container-first deployment** with Dockerfile and docker-compose examples
+- Installing as a git submodule in your project
+- Configuring OAuth 2.1 with Keycloak
+- Implementing Personal Access Token verification
+- Real-world examples from production projects
+
 ## Development
+
+### Docker Development (Recommended)
+
+```bash
+# Clone repository
+git clone https://github.com/Originate-Group/common-mcp-submodule.git
+cd common-mcp-submodule
+
+# Run example with Docker
+cd examples/docker
+docker compose up
+
+# For hot-reload development, uncomment the volume mounts in docker-compose.yml
+```
+
+### Local Development (Alternative)
 
 ```bash
 # Clone repository

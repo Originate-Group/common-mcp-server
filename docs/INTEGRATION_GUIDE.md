@@ -1,34 +1,75 @@
 # Integration Guide
 
-This guide shows how to integrate `common-mcp-submodule` into your existing FastAPI application.
+This guide shows how to integrate `common-mcp-submodule` into your existing FastAPI application using **container-first deployment** (recommended).
 
-## Step-by-Step Integration
+## Quick Start (Docker - Recommended)
 
-### 1. Add as Dependency
-
-**Option A: Git Submodule (Recommended for internal projects)**
+See the complete working example in [`examples/docker/`](../examples/docker/README.md):
 
 ```bash
-# Add as submodule
+cd examples/docker
+docker compose up
+```
+
+## Production Integration (Container-First)
+
+### 1. Add as Git Submodule
+
+```bash
+# In your project root
 git submodule add https://github.com/Originate-Group/common-mcp-submodule.git
-
-# Install in development mode
-pip install -e common-mcp-submodule/
 ```
 
-**Option B: PyPI (When published)**
+### 2. Install in Dockerfile
 
-```bash
-pip install common-mcp-submodule
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy and install common-mcp-submodule
+COPY common-mcp-submodule/ /app/common-mcp-submodule/
+RUN pip install --no-cache-dir -e /app/common-mcp-submodule
+
+# Copy your application requirements
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your application code
+COPY src/ /app/src/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Option C: Direct from Git**
+### 3. Create docker-compose.yml
 
-```bash
-pip install git+https://github.com/Originate-Group/common-mcp-submodule.git
+```yaml
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/mydb
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: your-password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
 ```
 
-### 2. Configure Authentication
+### 4. Configure Authentication in Your Application
 
 #### For OAuth with Keycloak
 
@@ -78,7 +119,7 @@ pat_config = PATConfig(
 )
 ```
 
-### 3. Create MCP Server Instance
+### 5. Create MCP Server Instance
 
 ```python
 from common_mcp_server import MCPServer
@@ -92,7 +133,7 @@ mcp_server = MCPServer(
 )
 ```
 
-### 4. Define Your Tools
+### 6. Define Your Tools
 
 Create a module for your MCP tools (e.g., `mcp_tools.py`):
 
@@ -140,7 +181,7 @@ def get_tools() -> list[Tool]:
 mcp_server.set_tools_provider(get_tools)
 ```
 
-### 5. Implement Tool Handler
+### 7. Implement Tool Handler
 
 Create a tool handler module (e.g., `mcp_handlers.py`):
 
@@ -213,7 +254,7 @@ async def handle_tool(
             return [TextContent(type="text", text=f"Error: {str(e)}")]
 ```
 
-### 6. Mount in FastAPI App
+### 8. Mount in FastAPI App
 
 In your `main.py` or `server.py`:
 
@@ -433,21 +474,55 @@ List my items using the your-app MCP tools
 2. Verify authentication tokens are passed correctly
 3. Test API endpoints directly with curl first
 
+## Real-World Examples
+
+See production deployments using this pattern:
+
+- **[originate-raas-team](https://github.com/Originate-Group/originate-raas-team)**: OAuth + PAT authentication with Keycloak
+  - Full Docker setup with PostgreSQL, OAuth flow, MCP HTTP endpoint
+  - [View Dockerfile](https://github.com/Originate-Group/originate-raas-team/blob/main/Dockerfile)
+
+- **[originate-raas-core](https://github.com/Originate-Group/originate-raas-core)**: Solo developer mode, local deployment
+  - Simple `docker compose up` experience, no authentication
+  - [View Dockerfile](https://github.com/Originate-Group/originate-raas-core/blob/main/Dockerfile)
+
 ## Best Practices
 
-1. **Keep tools simple** - Each tool should do one thing well
-2. **Use descriptive names** - Tool names should clearly indicate their purpose
-3. **Document schemas** - Provide clear descriptions in inputSchema
-4. **Handle errors gracefully** - Return user-friendly error messages
-5. **Log appropriately** - Use structured logging for debugging
-6. **Test thoroughly** - Test with real MCP clients (Claude Code, Claude Desktop)
-7. **Version your changes** - Update server version when changing tools
+1. **Deploy with Docker** - Use containers for development and production
+2. **Keep tools simple** - Each tool should do one thing well
+3. **Use descriptive names** - Tool names should clearly indicate their purpose
+4. **Document schemas** - Provide clear descriptions in inputSchema
+5. **Handle errors gracefully** - Return user-friendly error messages
+6. **Log appropriately** - Use structured logging for debugging
+7. **Test thoroughly** - Test with real MCP clients (Claude Code, Claude Desktop)
+8. **Version your changes** - Update server version when changing tools
+
+---
+
+## Alternative: Local Development Without Docker
+
+For local testing and development (not recommended for production), you can install directly:
+
+```bash
+# Option A: Git submodule
+git submodule add https://github.com/Originate-Group/common-mcp-submodule.git
+pip install -e common-mcp-submodule/
+
+# Option B: PyPI (when published)
+pip install common-mcp-submodule
+
+# Option C: Direct from Git
+pip install git+https://github.com/Originate-Group/common-mcp-submodule.git
+```
+
+**Note**: This approach requires managing local Python versions, virtualenvs, and dependencies. Docker provides a more consistent, production-parity environment.
 
 ## Next Steps
 
-- Add monitoring and metrics
-- Implement rate limiting
+- Review the [Docker example](../examples/docker/README.md) for a complete working setup
+- Add monitoring and metrics to your deployment
+- Implement rate limiting for production
 - Add request validation
 - Create automated tests
-- Set up CI/CD pipeline
+- Set up CI/CD pipeline with container builds
 - Document your specific tools
