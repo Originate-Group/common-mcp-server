@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 
 from .auth import DualAuthenticator, OAuthConfig, PATConfig
 from .protocol import MCPProtocolHandler
+from .oauth import OAuthRouterConfig, create_oauth_router
 
 logger = logging.getLogger("common-mcp-server.server")
 
@@ -69,22 +70,27 @@ class MCPServer:
         pat_config: Optional[PATConfig] = None,
         resource_url: Optional[str] = None,
         tools_provider: Optional[Callable[[], Awaitable[list[Tool]]]] = None,
+        oauth_router_config: Optional[OAuthRouterConfig] = None,
     ):
         """Initialize the MCP server.
 
         Args:
             name: Server name (shown in MCP client)
             version: Server version string
-            oauth_config: OAuth 2.1 configuration (optional)
+            oauth_config: OAuth 2.1 configuration for token validation (optional)
             pat_config: Personal Access Token configuration (optional)
             resource_url: Base URL for WWW-Authenticate header (optional)
             tools_provider: Async function that returns list of available tools (optional)
+            oauth_router_config: Configuration for OAuth discovery/proxy endpoints (optional).
+                If provided, enables Claude Desktop Custom Connector support via
+                /.well-known/* and /oauth/* endpoints.
 
         Raises:
             ValueError: If neither oauth_config nor pat_config is provided
         """
         self.name = name
         self.version = version
+        self.resource_url = resource_url
 
         # Initialize authentication
         self.authenticator = DualAuthenticator(
@@ -103,8 +109,13 @@ class MCPServer:
         # Initialize protocol handler (will be created when tool handler is set)
         self._protocol_handler: Optional[MCPProtocolHandler] = None
 
-        # Create router
+        # Create MCP router
         self._router = APIRouter()
+
+        # Create OAuth router if configured
+        self._oauth_router: Optional[APIRouter] = None
+        if oauth_router_config:
+            self._oauth_router = create_oauth_router(oauth_router_config)
 
     def tool_handler(self) -> Callable:
         """Decorator to register the tool execution handler.
@@ -246,3 +257,42 @@ class MCPServer:
             ```
         """
         self._tools_provider = provider
+
+    def get_oauth_router(self) -> Optional[APIRouter]:
+        """Get the OAuth router for mounting in your application.
+
+        This router provides OAuth discovery and proxy endpoints required for
+        Claude Desktop Custom Connector authentication:
+
+        - /.well-known/oauth-authorization-server (RFC 8414)
+        - /.well-known/oauth-protected-resource (RFC 9728)
+        - /oauth/authorize (proxy to Keycloak)
+        - /oauth/token (proxy to Keycloak)
+        - /oauth/register (RFC 7591 Dynamic Client Registration)
+        - /oauth/userinfo (proxy to Keycloak)
+
+        Returns:
+            APIRouter: FastAPI router with OAuth endpoints, or None if not configured
+
+        Example:
+            ```python
+            app = FastAPI()
+
+            # Mount OAuth router at root (required for discovery)
+            oauth_router = mcp_server.get_oauth_router()
+            if oauth_router:
+                app.include_router(oauth_router)
+
+            # Mount MCP router
+            app.include_router(mcp_server.get_router(), prefix="/mcp")
+            ```
+        """
+        return self._oauth_router
+
+    def has_oauth_router(self) -> bool:
+        """Check if OAuth router is configured.
+
+        Returns:
+            bool: True if OAuth router is available
+        """
+        return self._oauth_router is not None

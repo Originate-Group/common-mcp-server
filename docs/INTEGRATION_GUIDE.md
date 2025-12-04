@@ -11,6 +11,89 @@ cd examples/docker
 docker compose up
 ```
 
+## Claude Desktop Custom Connector Support
+
+To enable OAuth authentication for Claude Desktop Custom Connectors, you need to configure the OAuth router. This provides the discovery and proxy endpoints required by the MCP specification.
+
+### GitHub Variables Required
+
+Set these at the **GitHub Organization level** (shared across all repos):
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `KEYCLOAK_URL` | `https://auth.originate.group` | Keycloak base URL |
+| `KEYCLOAK_REALM` | `originate-prod` | Keycloak realm name |
+| `KEYCLOAK_CLIENT_ID` | `originate-api` | Shared public client ID |
+
+Set these at the **GitHub Repository level** (unique per app):
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `APP_BASE_URL` | `https://eng.tarkaflow.ai` | This app's base URL |
+
+### Keycloak Client Configuration
+
+The shared Keycloak client must be configured as:
+
+- **Access Type**: Public (no client secret)
+- **Valid Redirect URIs**: `https://claude.ai/api/mcp/auth_callback`
+- **Standard Flow Enabled**: Yes
+- **PKCE Code Challenge Method**: S256
+
+### Quick OAuth Setup
+
+```python
+from common_mcp_server import MCPServer, OAuthConfig, OAuthRouterConfig
+
+# OAuth router config (for Claude Desktop Custom Connectors)
+oauth_router_config = OAuthRouterConfig(
+    resource_url=settings.app_base_url,          # e.g., https://eng.tarkaflow.ai
+    keycloak_url=settings.keycloak_url,          # e.g., https://auth.originate.group
+    keycloak_realm=settings.keycloak_realm,      # e.g., originate
+    keycloak_client_id=settings.keycloak_client_id,  # e.g., originate-api
+    service_name="My App",                        # Human-readable name
+)
+
+# OAuth config (for token validation)
+oauth_config = OAuthConfig(
+    jwks_url=f"{settings.keycloak_url}/realms/{settings.keycloak_realm}/protocol/openid-connect/certs",
+    issuer=f"{settings.keycloak_url}/realms/{settings.keycloak_realm}",
+)
+
+# Create MCP server with OAuth
+mcp_server = MCPServer(
+    name="my-app-mcp",
+    version="1.0.0",
+    oauth_config=oauth_config,
+    oauth_router_config=oauth_router_config,
+    resource_url=settings.app_base_url,
+)
+
+# Mount in FastAPI app
+app = FastAPI()
+
+# OAuth router at root (required for /.well-known/* discovery)
+oauth_router = mcp_server.get_oauth_router()
+if oauth_router:
+    app.include_router(oauth_router)
+
+# MCP router at /mcp
+app.include_router(mcp_server.get_router(), prefix="/mcp")
+```
+
+### OAuth Endpoints Provided
+
+When configured, the OAuth router exposes:
+
+| Endpoint | RFC | Purpose |
+|----------|-----|---------|
+| `/.well-known/oauth-authorization-server` | RFC 8414 | OAuth server metadata |
+| `/.well-known/oauth-protected-resource` | RFC 9728 | Protected resource metadata |
+| `/oauth/authorize` | - | Proxy to Keycloak auth |
+| `/oauth/token` | - | Proxy to Keycloak token |
+| `/oauth/register` | RFC 7591 | Dynamic client registration |
+| `/oauth/userinfo` | - | Proxy to Keycloak userinfo |
+
 ## Production Integration (Container-First)
 
 ### 1. Add as Git Submodule

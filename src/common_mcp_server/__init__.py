@@ -12,11 +12,14 @@ __version__ = "1.0.0"
 from .server import MCPServer
 from .auth import OAuthConfig, PATConfig
 from .protocol import MCPProtocolHandler
+from .oauth import OAuthRouterConfig, create_oauth_router
 
 __all__ = [
     "MCPServer",
     "OAuthConfig",
     "PATConfig",
     "MCPProtocolHandler",
+    "OAuthRouterConfig",
+    "create_oauth_router",
     "__version__",
 ]
